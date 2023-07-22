@@ -75,9 +75,9 @@ function gotResult(error, results) {
   // console.log(results[0]);
   label = results[0].label;
 
-  if (label === "Class 1") {
+  if (label === "fist") {
     outByte = 1;
-  } else if (label === "Class 2") {
+  } else if (label === "flat") {
     outByte = 2;
   }
 
