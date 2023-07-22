@@ -15,15 +15,25 @@ const squareSize = 100;
 const knnClassifier = ml5.KNNClassifier();
 let featureExtractor;
 
+let sampleA, sampleB, sampleC, sampleD;
+let isPlaying;
+
+function preload() {
+  sampleA = loadSound("audio_samples/SampleA.mp3");
+  sampleB = loadSound("audio_samples/SampleB.mp3");
+  sampleC = loadSound("audio_samples/SampleC.mp3");
+  sampleD = loadSound("audio_samples/SampleD.mp3");
+}
+
 function setup() {
   // Create a featureExtractor that can extract the already learned features from MobileNet
-  featureExtractor = ml5.featureExtractor('MobileNet', modelReady);
+  featureExtractor = ml5.featureExtractor("MobileNet", modelReady);
 
   const canvas = createCanvas(640, 480);
   posX = width / 2;
   posY = height / 2;
   // Put the canvas into the <div id="canvasContainer"></div>.
-  canvas.parent('#canvasContainer')
+  canvas.parent("#canvasContainer");
   // Create a video element
   video = createCapture(VIDEO);
   video.size(width, height);
@@ -33,11 +43,13 @@ function setup() {
   createButtons();
   noStroke();
   fill(255, 0, 0);
+
+  isPlaying = false;
 }
 
 function draw() {
   // Flip the video from left to right, mirror the video
-  translate(width, 0)
+  translate(width, 0);
   scale(-1, 1);
   image(video, 0, 0, width, height);
 
@@ -45,8 +57,8 @@ function draw() {
   rect(posX, posY, squareSize, squareSize);
 }
 
-function modelReady(){
-  select('#status').html('FeatureExtractor(mobileNet model) Loaded')
+function modelReady() {
+  select("#status").html("FeatureExtractor(mobileNet model) Loaded");
 }
 
 // Add the current frame from the video to the classifier
@@ -64,7 +76,7 @@ function classify() {
   // Get the total number of labels from knnClassifier
   const numLabels = knnClassifier.getNumLabels();
   if (numLabels <= 0) {
-    console.error('There is no examples in any label');
+    console.error("There is no examples in any label");
     return;
   }
   // Get the features of the input video
@@ -77,36 +89,69 @@ function classify() {
 // A util function to create UI buttons
 function createButtons() {
   // When the addClass1 button is pressed, add the current frame to class "Up"
-  buttonA = select('#addClass1');
-  buttonA.mousePressed(function() {
-    addExample('Up');
+  buttonA = select("#addClass1");
+  buttonA.mousePressed(function () {
+    addExample("Up");
   });
 
   // When the addClass2 button is pressed, add the current frame to class "Right"
-  buttonB = select('#addClass2');
-  buttonB.mousePressed(function() {
-    addExample('Right');
+  buttonB = select("#addClass2");
+  buttonB.mousePressed(function () {
+    addExample("Right");
   });
 
   // When the addClass3 button is pressed, add the current frame to class "Down"
-  buttonC = select('#addClass3');
-  buttonC.mousePressed(function() {
-    addExample('Down');
+  buttonC = select("#addClass3");
+  buttonC.mousePressed(function () {
+    addExample("Down");
   });
 
   // When the addClass4 button is pressed, add the current frame to class "Left"
-  buttonC = select('#addClass4');
-  buttonC.mousePressed(function() {
-    addExample('Left');
+  buttonC = select("#addClass4");
+  buttonC.mousePressed(function () {
+    addExample("Left");
   });
 
   // Predict button
-  buttonPredict = select('#buttonPredict');
-  buttonPredict.mousePressed(classify);
+  buttonPredict = select("#buttonPredict");
+  buttonPredict.mousePressed(function () {
+    select("#audioOptions").removeClass("hidden");
+    classify();
+  });
 
   // Clear all classes button
-  buttonClearAll = select('#clearAll');
+  buttonClearAll = select("#clearAll");
   buttonClearAll.mousePressed(clearAllLabels);
+
+  select("#playAudio").mousePressed(playSamples);
+  select("#stopAudio").mousePressed(stopSamples);
+}
+
+function playSamples() {
+  isPlaying = true;
+}
+
+function stopSamples() {
+  sampleA.stop();
+  sampleB.stop();
+  sampleC.stop();
+  sampleD.stop();
+  isPlaying = false;
+}
+
+function playSample(sample) {
+  // audio is not set to play
+  if (!isPlaying) return;
+  // sample is already playing
+  if (sample.isPlaying()) return;
+
+  // turn off all playing samples
+  sampleA.stop();
+  sampleB.stop();
+  sampleC.stop();
+  sampleD.stop();
+
+  sample.play();
 }
 
 // Show the results
@@ -120,26 +165,30 @@ function gotResults(err, result) {
     const confidences = result.confidencesByLabel;
     // result.label is the label that has the highest confidence
     if (result.label) {
-      select('#result').html(result.label);
-      select('#confidence').html(`${confidences[result.label] * 100} %`);
+      select("#result").html(result.label);
+      select("#confidence").html(`${confidences[result.label] * 100} %`);
 
-      switch(result.label) {
-        case 'Up':
-          posY-=2;
+      switch (result.label) {
+        case "Up":
+          posY -= 2;
+          playSample(sampleA);
           break;
 
-        case 'Down':
-          posY+=2;
+        case "Down":
+          posY += 2;
+          playSample(sampleB);
           break;
 
-        case 'Left':
-          posX+=2;
+        case "Left":
+          posX += 2;
+          playSample(sampleC);
           break;
 
-        case 'Right':
-          posX-=2;
+        case "Right":
+          posX -= 2;
+          playSample(sampleD);
           break;
-        
+
         default:
           console.log(`Sorry, unknown label: ${result.label}`);
       }
@@ -154,14 +203,14 @@ function gotResults(err, result) {
   classify();
 }
 
-// Update the example count for each class	
+// Update the example count for each class
 function updateCounts() {
   const counts = knnClassifier.getCountByLabel();
 
-  select('#example1').html(counts['Up'] || 0);
-  select('#example2').html(counts['Right'] || 0);
-  select('#example3').html(counts['Down'] || 0);
-  select('#example4').html(counts['Left'] || 0);
+  select("#example1").html(counts["Up"] || 0);
+  select("#example2").html(counts["Right"] || 0);
+  select("#example3").html(counts["Down"] || 0);
+  select("#example4").html(counts["Left"] || 0);
 }
 
 // Clear the examples in one class
